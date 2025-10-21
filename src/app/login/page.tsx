@@ -12,6 +12,8 @@ import {
 import { Eye, EyeOff, Lock, Mail, UserCheck } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { loginAction } from "./loginAction.action";
+import { toast } from "sonner";
 
 interface LoginFormData {
   email: string;
@@ -35,9 +37,27 @@ const Login: React.FC = () => {
 
   console.log(formData);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault()
     try {
-    } catch (error) {}
+
+      const LoginData = {
+        email: formData.email.toLowerCase().trim(),
+        password: formData.password,
+      };
+
+      const result = await loginAction(LoginData);
+      console.log(result)
+      if (result.status == 'SUCCESS'){
+        return toast.success(result.message)
+      }
+      else{
+        return toast.error(result.message)
+      }
+    } catch (error) {
+      console.log(error)
+      return toast.error("Something went wrong!")
+    }
   };
 
   return (
