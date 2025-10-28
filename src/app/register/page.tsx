@@ -1,7 +1,6 @@
 "use client";
 
 import React, { ChangeEvent, FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -17,66 +16,35 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Eye, EyeOff, Lock, Mail, Router, User, UserCheck } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, User, UserCheck } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { registrationAction } from "./registrationAction.action";
+import { registrationAction } from "../../../features/auth/server/auth.actions";
+import { useForm } from "react-hook-form";
+import { RegisterUserWithConfirmData, registerUserWithConfirmSchema } from "../../../features/auth/auth.schema";
+import { zodResolver } from "@hookform/resolvers/zod";
 
-interface RegistrationFormData {
-  name: string;
-  userName: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-  role: "applicant" | "employer";
-}
 
 const Registration: React.FC = () => {
-  const router = useRouter()
-  const [formData, setFormData] = useState<RegistrationFormData>({
-    name: "",
-    userName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    role: "applicant",
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(registerUserWithConfirmSchema)
   });
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const handleInputChange = (name: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  const onSubmit = async (data: RegisterUserWithConfirmData) => {
+    const result = await registrationAction(data);
 
-  console.log(formData);
+    if (result.status == 'SUCCESS') toast.success(result.message);
+    else toast.error(result.message);
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-
-    const RegistrationData = {
-      name: formData.name.trim(),
-      userName: formData.userName.trim(),
-      email: formData.email.toLowerCase().trim(),
-      password: formData.password,
-      role: formData.role,
-    };
-
-    if (formData.password !== formData.confirmPassword)
-      return toast.error('Password is not matching!');
-
-    const result = await registrationAction(RegistrationData);
-    if (result.status == 'SUCCESS'){
-      toast.success(result.message);
-      router.push('/login');
-    }
-    else{
-      toast.error(result.message);
-    }
   };
 
   return (
@@ -91,7 +59,7 @@ const Registration: React.FC = () => {
         </CardHeader>
 
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Name Field */}
             <div className="space-y-2">
               <Label htmlFor="name">Full Name *</Label>
@@ -102,13 +70,17 @@ const Registration: React.FC = () => {
                   type="text"
                   placeholder="Enter your full name"
                   required
-                  value={formData.name}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                    handleInputChange("name", e.target.value)
-                  }
-                  className={`pl-10 `}
+                  {...register('name')}
+                  className={`pl-10 ${
+                    errors.name ? 'border-destructive' : ''
+                  }`}
                 />
               </div>
+              {errors.name && (
+                <p className="text-sm text-destructive">
+                  {errors.name.message}
+                </p>
+              )}
             </div>
 
             {/* Username Field */}
@@ -121,13 +93,17 @@ const Registration: React.FC = () => {
                   type="text"
                   placeholder="Choose a username"
                   required
-                  value={formData.userName}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                    handleInputChange("userName", e.target.value)
-                  }
-                  className={`pl-10 `}
+                  {...register('userName')}
+                  className={`pl-10 ${
+                    errors.userName ? 'border-destructive' : ''
+                  }`}
                 />
               </div>
+              {errors.userName && (
+                <p className="text-sm text-destructive">
+                  {errors.userName.message}
+                </p>
+              )}
             </div>
 
             {/* Email Field */}
@@ -140,23 +116,24 @@ const Registration: React.FC = () => {
                   type="email"
                   placeholder="Enter your email"
                   required
-                  value={formData.email}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                    handleInputChange("email", e.target.value)
-                  }
-                  className={`pl-10 `}
+                  {...register('email')}
+                  className={`pl-10 ${
+                    errors.email ? 'border-destructive' : ''
+                  }`}
                 />
               </div>
+              {errors.email && (
+                <p className="text-sm text-destructive">
+                  {errors.email.message}
+                </p>
+              )}
             </div>
 
             {/* Role Selection */}
             <div className="space-y-2 w-full">
               <Label htmlFor="role">I am a *</Label>
               <Select
-                value={formData.role}
-                onValueChange={(value: "applicant" | "employer") =>
-                  handleInputChange("role", value)
-                }
+              {...register('role')}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select your role" />
@@ -178,11 +155,10 @@ const Registration: React.FC = () => {
                   type={showPassword ? "text" : "password"}
                   placeholder="Create a strong password"
                   required
-                  value={formData.password}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                    handleInputChange("password", e.target.value)
-                  }
-                  className={`pl-10 pr-10 `}
+                  {...register('password')}
+                  className={`pl-10 pr-10 ${
+                    errors.password ? 'border-destructive' : ''
+                  }`}
                 />
 
                 <Button
@@ -199,6 +175,11 @@ const Registration: React.FC = () => {
                   )}
                 </Button>
               </div>
+              {errors.password && (
+                <p className="text-sm text-destructive">
+                  {errors.password.message}
+                </p>
+              )}
             </div>
 
             {/* Confirm Password Field */}
@@ -211,11 +192,10 @@ const Registration: React.FC = () => {
                   type={showConfirmPassword ? "text" : "password"}
                   placeholder="Confirm your password"
                   required
-                  value={formData.confirmPassword}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                    handleInputChange("confirmPassword", e.target.value)
-                  }
-                  className={`pl-10 pr-10 `}
+                  {...register('confirmPassword')}
+                  className={`pl-10 pr-10 ${
+                    errors.confirmPassword ? 'border-destructive' : ''
+                  }`}
                 />
                 <Button
                   type="button"
@@ -231,6 +211,11 @@ const Registration: React.FC = () => {
                   )}
                 </Button>
               </div>
+              {errors.confirmPassword && (
+                <p className="text-sm text-destructive">
+                  {errors.confirmPassword.message}
+                </p>
+              )}
             </div>
 
             {/* Submit Button */}

@@ -12,51 +12,34 @@ import {
 import { Eye, EyeOff, Lock, Mail, UserCheck } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { loginAction } from "./loginAction.action";
+import { loginAction } from "../../../features/auth/server/auth.actions";
 import { toast } from "sonner";
-
-interface LoginFormData {
-  email: string;
-  password: string;
-}
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { LoginUserData, LoginUserSchema } from "../../../features/auth/auth.schema";
 
 const Login: React.FC = () => {
-  const [formData, setFormData] = useState<LoginFormData>({
-    email: "",
-    password: "",
-  });
-
+  const {
+      register,
+      handleSubmit,
+      watch,
+      formState: { errors },
+    } = useForm({
+      resolver: zodResolver(LoginUserSchema)
+    });
+  
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleInputChange = (name: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  console.log(formData);
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
+  const onSubmit = async (data: LoginUserData) => {
     try {
+      const result = await loginAction(data);
 
-      const LoginData = {
-        email: formData.email.toLowerCase().trim(),
-        password: formData.password,
-      };
+      if (result.status == 'SUCCESS') toast.success(result.message)
+      else toast.error(result.message)
 
-      const result = await loginAction(LoginData);
-      console.log(result)
-      if (result.status == 'SUCCESS'){
-        return toast.success(result.message)
-      }
-      else{
-        return toast.error(result.message)
-      }
     } catch (error) {
       console.log(error)
-      return toast.error("Something went wrong!")
+      toast.error("Something went wrong!")
     }
   };
 
@@ -72,8 +55,7 @@ const Login: React.FC = () => {
         </CardHeader>
 
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Email Field */}
             <div className="space-y-2">
               <Label htmlFor="email">Email Address *</Label>
@@ -84,13 +66,17 @@ const Login: React.FC = () => {
                   type="email"
                   placeholder="Enter your email"
                   required
-                  value={formData.email}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                    handleInputChange("email", e.target.value)
-                  }
-                  className={`pl-10 `}
+                  {...register('email')}
+                  className={`pl-10 ${
+                    errors.email ? 'border-destructive' : ''
+                  }`}
                 />
               </div>
+              {errors.email && (
+                <p className="text-sm text-destructive">
+                  {errors.email.message}
+                </p>
+              )}
             </div>
 
             {/* Password Field */}
@@ -103,11 +89,10 @@ const Login: React.FC = () => {
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   required
-                  value={formData.password}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                    handleInputChange("password", e.target.value)
-                  }
-                  className={`pl-10 pr-10 `}
+                  {...register('password')}
+                  className={`pl-10 pr-10 ${
+                    errors.password ? 'border-destructive' : ''
+                  }`}
                 />
 
                 <Button
@@ -124,6 +109,11 @@ const Login: React.FC = () => {
                   )}
                 </Button>
               </div>
+              {errors.password && (
+                <p className="text-sm text-destructive">
+                  {errors.password.message}
+                </p>
+              )}
             </div>
 
             {/* Submit Button */}
