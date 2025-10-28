@@ -11,7 +11,7 @@ export const users = mysqlTable('users', {
     deletedAt: timestamp('deleted_at'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
-});
+}); 
 
 export const sessions = mysqlTable('sessions', {
     id: varchar('id', {length: 255}).primaryKey(),

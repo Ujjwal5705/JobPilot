@@ -12,7 +12,7 @@ import {
 import { Eye, EyeOff, Lock, Mail, UserCheck } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { loginAction } from "./loginAction.action";
+import { loginAction } from "../../../features/auth/server/auth.actions";
 import { toast } from "sonner";
 
 interface LoginFormData {
