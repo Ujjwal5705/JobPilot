@@ -5,6 +5,7 @@ import * as argon2 from "argon2";
 import { eq, or } from "drizzle-orm";
 import { users } from "../../../drizzle/schema";
 import { LoginUserData, LoginUserSchema, RegisterUserData, RegisterUserSchema } from "../auth.schema";
+import { createSessionAndSetCookies } from "./use-cases/sessions";
 
 export const registrationAction = async (data: RegisterUserData) => {
 
@@ -36,7 +37,8 @@ export const registrationAction = async (data: RegisterUserData) => {
 
             // hashing password
             const hashedPassword = await argon2.hash(password);
-            await db.insert(users).values({name, userName, email, password: hashedPassword, role});
+            const [result] = await db.insert(users).values({name, userName, email, password: hashedPassword, role});
+            await createSessionAndSetCookies(result.insertId)
 
             return {
                 status: 'SUCCESS',
@@ -74,6 +76,9 @@ export const loginAction = async (data: LoginUserData) => {
 
             // Checking password
             const isValid = await argon2.verify(user.password, password)
+
+            await createSessionAndSetCookies(user.id)
+
             if (!isValid){
                 return {
                     status: "ERROR",
