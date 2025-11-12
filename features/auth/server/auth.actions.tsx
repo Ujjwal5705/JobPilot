@@ -3,9 +3,12 @@
 import { db } from "@/config/db";
 import * as argon2 from "argon2";
 import { eq, or } from "drizzle-orm";
-import { users } from "../../../drizzle/schema";
+import { applicants, employers, users } from "../../../drizzle/schema";
 import { LoginUserData, LoginUserSchema, RegisterUserData, RegisterUserSchema } from "../auth.schema";
-import { createSessionAndSetCookies } from "./use-cases/sessions";
+import { createSessionAndSetCookies, invalidateSession } from "./use-cases/sessions";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import crypto from 'crypto'
 
 export const registrationAction = async (data: RegisterUserData) => {
 
@@ -38,6 +41,12 @@ export const registrationAction = async (data: RegisterUserData) => {
             // hashing password
             const hashedPassword = await argon2.hash(password);
             const [result] = await db.insert(users).values({name, userName, email, password: hashedPassword, role});
+            if (role == 'employer'){
+                await db.insert(employers).values({id: result.insertId});
+            }
+            else{
+                await db.insert(applicants).values({id: result.insertId});
+            }
             await createSessionAndSetCookies(result.insertId)
 
             return {
@@ -99,3 +108,16 @@ export const loginAction = async (data: LoginUserData) => {
             }
         }
 };
+
+export const logoutUserAction = async () => {
+    const cookieStore = await cookies();
+    const session = cookieStore.get('session')?.value;
+
+    if(!session) return redirect('/login')
+
+    const hashedToken = crypto.createHash('sha-256').update(session).digest('hex')
+
+    await invalidateSession(hashedToken)
+    cookieStore.delete("session")
+    redirect('/login')
+}

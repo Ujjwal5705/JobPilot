@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LoginUserData, LoginUserSchema } from "../../../features/auth/auth.schema";
+import { useRouter } from "next/router";
 
 const Login: React.FC = () => {
   const {
@@ -28,13 +29,18 @@ const Login: React.FC = () => {
       resolver: zodResolver(LoginUserSchema)
     });
   
+  // const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
 
   const onSubmit = async (data: LoginUserData) => {
     try {
       const result = await loginAction(data);
 
-      if (result.status == 'SUCCESS') toast.success(result.message)
+      if (result.status == 'SUCCESS') {
+        // if (data.role == 'employer') router.push('/employer-dashboard')
+        // else router.push('/dashboard')
+        toast.success(result.message)
+      }
       else toast.error(result.message)
 
     } catch (error) {

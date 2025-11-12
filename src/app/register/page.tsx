@@ -21,9 +21,10 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { registrationAction } from "../../../features/auth/server/auth.actions";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { RegisterUserWithConfirmData, registerUserWithConfirmSchema } from "../../../features/auth/auth.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
 
 
 const Registration: React.FC = () => {
@@ -31,18 +32,23 @@ const Registration: React.FC = () => {
     register,
     handleSubmit,
     watch,
+    control,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(registerUserWithConfirmSchema)
   });
-
+  
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const onSubmit = async (data: RegisterUserWithConfirmData) => {
     const result = await registrationAction(data);
-
-    if (result.status == 'SUCCESS') toast.success(result.message);
+    if (result.status == 'SUCCESS') {
+      if (data.role == 'employer') router.push('/employer-dashboard')
+      else router.push('/dashboard')
+      toast.success(result.message);
+    }
     else toast.error(result.message);
 
   };
@@ -132,17 +138,21 @@ const Registration: React.FC = () => {
             {/* Role Selection */}
             <div className="space-y-2 w-full">
               <Label htmlFor="role">I am a *</Label>
-              <Select
-              {...register('role')}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select your role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="applicant">Job Applicant</SelectItem>
-                  <SelectItem value="employer">Employer</SelectItem>
-                </SelectContent>
-              </Select>
+              <Controller
+                name="role"
+                control={control}
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select your role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="applicant">Job Applicant</SelectItem>
+                      <SelectItem value="employer">Employer</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
             </div>
 
             {/* Password Field */}
