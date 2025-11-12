@@ -24,25 +24,31 @@ import { registrationAction } from "../../../features/auth/server/auth.actions";
 import { Controller, useForm } from "react-hook-form";
 import { RegisterUserWithConfirmData, registerUserWithConfirmSchema } from "../../../features/auth/auth.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
 
 
 const Registration: React.FC = () => {
   const {
     register,
     handleSubmit,
+    watch,
     control,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(registerUserWithConfirmSchema)
   });
-
+  
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const onSubmit = async (data: RegisterUserWithConfirmData) => {
     const result = await registrationAction(data);
-
-    if (result.status == 'SUCCESS') toast.success(result.message);
+    if (result.status == 'SUCCESS') {
+      if (data.role == 'employer') router.push('/employer-dashboard')
+      else router.push('/dashboard')
+      toast.success(result.message);
+    }
     else toast.error(result.message);
 
   };
@@ -135,14 +141,15 @@ const Registration: React.FC = () => {
               <Controller
                 name="role"
                 control={control}
-                defaultValue="applicant" // optional
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} value={field.value}>
                 render={({ field }) => (
                   <Select
                     onValueChange={field.onChange}
                     value={field.value}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select your role" />
+                      <SelectValue placeholder="I am a *" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="applicant">Applicant</SelectItem>
