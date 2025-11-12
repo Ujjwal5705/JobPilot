@@ -8,21 +8,24 @@ import { eq } from 'drizzle-orm';
 import { date } from 'zod';
 import { invalidDataA } from '@hookform/resolvers/ajv/src/__tests__/__fixtures__/data-errors.js';
 
+type dbClient = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0]
+
 type CreateSessionData = {
     userAgent: string,
     ip: string,
     userID: number,
     token: string,
+    tx?: dbClient,
 }
 
 const generateSessionToken = () => {
     return crypto.randomBytes(32).toString('hex').normalize();
 };
 
-const createUserSession = async ({token, userID, userAgent, ip} : CreateSessionData) => {
+const createUserSession = async ({token, userID, userAgent, ip, tx = db} : CreateSessionData) => {
     const hashedToken = crypto.createHash('sha-256').update(token).digest('hex')
 
-    const [session] = await db.insert(sessions).values({
+    const [session] = await tx.insert(sessions).values({
         id: hashedToken,
         userid: userID,
         expiresAt: new Date(Date.now() + SESSION_LIFETIME*1000),
@@ -32,7 +35,7 @@ const createUserSession = async ({token, userID, userAgent, ip} : CreateSessionD
 
 }
 
-export const createSessionAndSetCookies = async (userID: number) => {
+export const createSessionAndSetCookies = async (userID: number, tx: dbClient = db) => {
     const token = generateSessionToken()
     const ip = await getIPAddress()
     const headersList = await headers()
@@ -42,6 +45,7 @@ export const createSessionAndSetCookies = async (userID: number) => {
         userID: userID,
         userAgent: headersList.get('user-agent') || '',
         ip: ip,
+        tx,
     })
 
     const cookieStore = await cookies()
