@@ -143,11 +143,16 @@ const Registration: React.FC = () => {
                 control={control}
                 render={({ field }) => (
                   <Select onValueChange={field.onChange} value={field.value}>
+                render={({ field }) => (
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                  >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select your role" />
+                      <SelectValue placeholder="I am a *" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="applicant">Job Applicant</SelectItem>
+                      <SelectItem value="applicant">Applicant</SelectItem>
                       <SelectItem value="employer">Employer</SelectItem>
                     </SelectContent>
                   </Select>
